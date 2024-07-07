@@ -2,7 +2,7 @@
 
 ## Bug-off
 
-![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=ajkumar1205&hide=java,cpp,c,cmake,css,html,swift&langs_count=6&theme=dark)
+![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=ajkumar1205&hide=java,cplusplus,c,cmake,css,html,swift&langs_count=6&theme=dark)
 <!--
 **ajkumar1205/ajkumar1205** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
