@@ -13,6 +13,7 @@ const navLinks = [
     { href: "#experience", label: "Experience" },
     { href: "#skills", label: "Skills" },
     { href: "#contact", label: "Contact" },
+    { href: "/blogs", label: "Blog", isPage: true },
 ];
 
 export function Header() {
@@ -32,13 +33,23 @@ export function Header() {
                 {/* Desktop Navigation */}
                 <div className="hidden md:flex items-center gap-8">
                     {navLinks.map((link) => (
-                        <a
-                            key={link.href}
-                            href={link.href}
-                            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            {link.label}
-                        </a>
+                        'isPage' in link && link.isPage ? (
+                            <Link
+                                key={link.href}
+                                href={link.href}
+                                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                {link.label}
+                            </Link>
+                        ) : (
+                            <a
+                                key={link.href}
+                                href={link.href}
+                                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                {link.label}
+                            </a>
+                        )
                     ))}
                 </div>
 
@@ -71,14 +82,25 @@ export function Header() {
                     <SheetContent side="right" className="w-72">
                         <div className="flex flex-col gap-6 mt-8">
                             {navLinks.map((link) => (
-                                <a
-                                    key={link.href}
-                                    href={link.href}
-                                    onClick={() => setIsOpen(false)}
-                                    className="text-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
-                                >
-                                    {link.label}
-                                </a>
+                                'isPage' in link && link.isPage ? (
+                                    <Link
+                                        key={link.href}
+                                        href={link.href}
+                                        onClick={() => setIsOpen(false)}
+                                        className="text-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        {link.label}
+                                    </Link>
+                                ) : (
+                                    <a
+                                        key={link.href}
+                                        href={link.href}
+                                        onClick={() => setIsOpen(false)}
+                                        className="text-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        {link.label}
+                                    </a>
+                                )
                             ))}
                             <div className="flex items-center gap-4 pt-4 border-t">
                                 <Button variant="ghost" size="icon" asChild>
