@@ -6,8 +6,8 @@ import { jwtVerify } from 'jose';
 import { BlogCard } from '@/components/blog/BlogCard';
 import { SearchBar } from '@/components/blog/SearchBar';
 import { db } from '@/db';
-import { tags } from '@/db/schema';
-import { desc } from 'drizzle-orm';
+import { blogs, tags, users, blogTags } from '@/db/schema';
+import { desc, eq, ilike, or, and, inArray } from 'drizzle-orm';
 
 const JWT_SECRET = new TextEncoder().encode(
     process.env.JWT_SECRET || 'your-secret-key-change-in-production'
@@ -51,20 +51,80 @@ async function getUser() {
     }
 }
 
-async function getBlogs(search?: string, tag?: string): Promise<BlogListItem[]> {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const params = new URLSearchParams();
-    if (search) params.set('search', search);
-    if (tag) params.set('tag', tag);
+async function getBlogs(search?: string, tagFilter?: string): Promise<BlogListItem[]> {
+    try {
+        const conditions = [];
 
-    const res = await fetch(`${baseUrl}/api/blogs?${params.toString()}`, {
-        cache: 'no-store',
-    });
+        // Only show approved blogs for public view
+        conditions.push(eq(blogs.approved, true));
 
-    if (!res.ok) return [];
+        // Search filter
+        if (search) {
+            const searchCondition = or(
+                ilike(blogs.slug, `%${search}%`),
+                ilike(blogs.desc, `%${search}%`),
+                ilike(blogs.content, `%${search}%`),
+                ilike(blogs.title, `%${search}%`)
+            );
+            if (searchCondition) {
+                conditions.push(searchCondition);
+            }
+        }
 
-    const data = await res.json();
-    return data.blogs || [];
+        // Tag filter - find blogs with the specified tag
+        if (tagFilter) {
+            const tag = await db
+                .select({ id: tags.id })
+                .from(tags)
+                .where(eq(tags.title, tagFilter))
+                .limit(1);
+
+            if (tag.length > 0) {
+                const blogIdsWithTag = await db
+                    .select({ blogId: blogTags.blogId })
+                    .from(blogTags)
+                    .where(eq(blogTags.tagId, tag[0].id));
+
+                if (blogIdsWithTag.length > 0) {
+                    const blogIds = blogIdsWithTag.map(b => b.blogId);
+                    conditions.push(inArray(blogs.id, blogIds));
+                } else {
+                    return []; // No blogs with this tag
+                }
+            } else {
+                return []; // Tag not found
+            }
+        }
+
+        const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+        const blogsList = await db
+            .select({
+                id: blogs.id,
+                title: blogs.title,
+                slug: blogs.slug,
+                desc: blogs.desc,
+                likes: blogs.likes,
+                comments: blogs.comments,
+                views: blogs.views,
+                approved: blogs.approved,
+                createdAt: blogs.createdAt,
+                author: {
+                    id: users.id,
+                    username: users.username,
+                    avatarUrl: users.avatarUrl,
+                },
+            })
+            .from(blogs)
+            .leftJoin(users, eq(blogs.authorId, users.id))
+            .where(whereClause)
+            .orderBy(desc(blogs.createdAt));
+
+        return blogsList;
+    } catch (error) {
+        console.error('Error fetching blogs:', error);
+        return [];
+    }
 }
 
 async function getTags(): Promise<Tag[]> {
@@ -85,7 +145,7 @@ interface BlogsPageProps {
 
 async function BlogsContent({ searchParams, allTags }: BlogsPageProps & { allTags: Tag[] }) {
     const resolvedParams = await searchParams;
-    const blogs = await getBlogs(resolvedParams.search, resolvedParams.tag);
+    const blogsList = await getBlogs(resolvedParams.search, resolvedParams.tag);
 
     return (
         <>
@@ -99,16 +159,16 @@ async function BlogsContent({ searchParams, allTags }: BlogsPageProps & { allTag
             {/* Results info */}
             {(resolvedParams.search || resolvedParams.tag) && (
                 <p className="text-muted-foreground mb-6">
-                    {blogs.length} {blogs.length === 1 ? 'result' : 'results'}
+                    {blogsList.length} {blogsList.length === 1 ? 'result' : 'results'}
                     {resolvedParams.search && <> for &quot;{resolvedParams.search}&quot;</>}
                     {resolvedParams.tag && <> in tag &quot;{resolvedParams.tag}&quot;</>}
                 </p>
             )}
 
             {/* Blog Grid */}
-            {blogs.length > 0 ? (
+            {blogsList.length > 0 ? (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {blogs.map((blog) => (
+                    {blogsList.map((blog) => (
                         <BlogCard key={blog.id} blog={blog} />
                     ))}
                 </div>
