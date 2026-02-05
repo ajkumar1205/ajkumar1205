@@ -31,7 +31,7 @@ export const personalInfo: PersonalInfo = {
     email: "iajkumar1205@gmail.com",
     phone: "+91 7082951852",
     location: "Mohali, India",
-    resumeUrl: "https://drive.google.com/file/d/1NLd3cQ1G7BBM3yBs7Q52yzDATZR8pP7y/view?usp=sharing",
+    resumeUrl: "https://drive.google.com/file/d/1WwqH6l0Ulde4Egn6Ls_9RjQg8OAEky5P/view?usp=sharing",
     avatar: "/avatar.jpg",
     education: {
         degree: "Bachelor of Technology in Computer Science and Engineering",
